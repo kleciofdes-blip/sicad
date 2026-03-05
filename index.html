@@ -318,7 +318,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
   <!-- Top nav (desktop) -->
   <div class="top-nav" id="topNav">
     <button class="tnav-btn active" onclick="go('dashboard')" data-p="dashboard">DASHBOARD</button>
-    <button class="tnav-btn" onclick="go('cadastrar')" data-p="cadastrar">+ CADASTRAR</button>
+    <button class="tnav-btn" onclick="if(editMode){if(!confirm('Sair do modo edição?')){return;}cadClear();}go('cadastrar')" data-p="cadastrar">+ CADASTRAR</button>
     <button class="tnav-btn" onclick="go('consultar')" data-p="consultar">CONSULTAR</button>
     <button class="tnav-btn" onclick="go('usuarios')" data-p="usuarios" id="tnUsuarios">USUÁRIOS</button>
   </div>
@@ -722,7 +722,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
   <!-- Bottom nav (mobile) -->
   <div class="bottom-nav">
     <button class="bnav-btn active" onclick="go('dashboard')" data-p="dashboard"><span class="ni">📊</span>DASHBOARD</button>
-    <button class="bnav-btn" onclick="go('cadastrar')" data-p="cadastrar"><span class="ni">➕</span>CADASTRAR</button>
+    <button class="bnav-btn" onclick="if(editMode){if(!confirm('Sair do modo edição?')){return;}cadClear();}go('cadastrar')" data-p="cadastrar"><span class="ni">➕</span>CADASTRAR</button>
     <button class="bnav-btn" onclick="go('consultar')" data-p="consultar"><span class="ni">🔍</span>CONSULTAR</button>
     <button class="bnav-btn" onclick="go('usuarios')" data-p="usuarios" id="bnUsuarios"><span class="ni">👥</span>USUÁRIOS</button>
   </div>
@@ -1029,20 +1029,37 @@ async function savePerson(){
   const btn=document.getElementById('saveBtn');btn.disabled=true;btn.innerHTML='<span class="ld"></span> SALVANDO...';
   try{
     const now=new Date().toISOString();
+    // Coleta senha antes de qualquer outra operação
+    const _ts = _tipoSenha || window._tipoSenha || null;
+    let _sc = null;
+    if (_ts === 'numeros') _sc = document.getElementById('fSenhaNum').value.trim() || null;
+    else if (_ts === 'alfanumerico') _sc = document.getElementById('fSenhaAlf').value.trim() || null;
+    else if (_ts === 'padrao') _sc = _pattern.length ? _pattern.join('') : null;
+
     const campos={
       nome, mae:gv('fMae'), apelido:gv('fApelido'), nascimento:gv('fNasc'),
       cpf:gv('fCpf'), endereco:gv('fEnd'), quadra:gv('fQuadra'), bairro:gv('fBairro'),
       telefone:gv('fTelefone'), insta1:gv('fInsta1'), insta2:gv('fInsta2'), facebook:gv('fFacebook'),
-      tipo_senha:window._tipoSenha||null, senha_celular:getSenhaCelular(),
+      tipo_senha:_ts, senha_celular:_sc,
       foto:faceD||null, tatuagens:JSON.stringify(tatD),
       atualizado_em:now
     };
+    console.log('[SICAD] Salvando campos:', JSON.stringify({...campos, foto:'[foto]', tatuagens:'[tats]'}));
     if(editMode){
-      const idParaEditar = editId; // captura antes de qualquer async
+      const idParaEditar = editId;
+      if(!idParaEditar){toast('Erro: ID não encontrado. Tente abrir o cadastro novamente.','error');return;}
       console.log('[SICAD] Editando id:', idParaEditar, 'campos:', JSON.stringify(Object.keys(campos)));
-      await DB.updPerson(idParaEditar, campos);
-      allP = allP.map(x => x.id===idParaEditar ? {...x,...campos} : x);
-      toast('Atualizado! ✅','success');
+      const resultado = await DB.updPerson(idParaEditar, campos);
+      console.log('[SICAD] Resultado updPerson:', JSON.stringify(resultado));
+      // Verifica se o Supabase realmente atualizou (retorna array com o registro)
+      if(Array.isArray(resultado) && resultado.length === 0){
+        // Supabase retornou array vazio = nenhum registro encontrado com esse id
+        toast('⚠️ Nenhum registro encontrado. Verifique o tipo da coluna id no Supabase.','error');
+        console.error('[SICAD] PATCH retornou vazio - id não encontrado no banco:', idParaEditar);
+      } else {
+        allP = allP.map(x => x.id===idParaEditar ? {...x,...campos} : x);
+        toast('Atualizado! ✅','success');
+      }
     } else {
       const d={id:'p'+Date.now(), ...campos, criado_por:CU.usuario||'admin', criado_em:now};
       await DB.addPerson(d);
