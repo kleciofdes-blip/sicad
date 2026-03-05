@@ -1047,7 +1047,12 @@ async function savePerson(){
     console.log('[SICAD] Salvando campos:', JSON.stringify({...campos, foto:'[foto]', tatuagens:'[tats]'}));
     if(editMode){
       const idParaEditar = editId;
-      if(!idParaEditar){toast('Erro: ID não encontrado. Tente abrir o cadastro novamente.','error');return;}
+      if(!idParaEditar){
+        // Tenta recuperar o id do título da página (fallback)
+        toast('Erro: sessão expirou. Abra o cadastro novamente para editar.','error');
+        go('consultar');
+        return;
+      }
       console.log('[SICAD] Editando id:', idParaEditar, 'campos:', JSON.stringify(Object.keys(campos)));
       const resultado = await DB.updPerson(idParaEditar, campos);
       console.log('[SICAD] Resultado updPerson:', JSON.stringify(resultado));
@@ -1082,13 +1087,7 @@ function cadClear(){
   editMode=false;editId=null;
   document.getElementById('cadTitle').textContent='NOVO CADASTRO';
 }
-document.getElementById('fCpf').addEventListener('input',function(){
-  let v=this.value.replace(/\D/g,'').substring(0,11);
-  if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
-  else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{3})/,'$1.$2.$3');
-  else if(v.length>3)v=v.replace(/(\d{3})(\d{3})/,'$1.$2');
-  this.value=v;
-});
+
 
 // ── VIEW PERSON ──
 async function viewPerson(id){
@@ -1128,10 +1127,14 @@ async function viewPerson(id){
   }catch(e){toast('Erro.','error');}
   finally{hideOv();}
 }
-function closePersonModal(){document.getElementById('personModal').classList.remove('open');editId=null;}
+function closePersonModal(){document.getElementById('personModal').classList.remove('open');if(!editMode)editId=null;}
 async function editPerson(){
-  const p=allP.find(x=>x.id===editId)||await DB.getPerson(editId);if(!p)return;
-  closePersonModal();go('cadastrar');editMode=true;
+  const idSalvo=editId; // salva ANTES de fechar o modal
+  const p=allP.find(x=>x.id===idSalvo)||await DB.getPerson(idSalvo);if(!p)return;
+  closePersonModal();
+  editId=idSalvo; // restaura após closePersonModal zerá-lo
+  editMode=true;
+  go('cadastrar');
   document.getElementById('cadTitle').textContent='EDITAR CADASTRO';
   document.getElementById('fNome').value=p.nome||'';document.getElementById('fMae').value=p.mae||'';
   document.getElementById('fApelido').value=p.apelido||'';document.getElementById('fNasc').value=p.nascimento||'';
@@ -1281,16 +1284,24 @@ function getSenhaCelular() {
   return null;
 }
 
-// Telefone mask
-document.addEventListener('DOMContentLoaded', () => {
-  const tel = document.getElementById('fTelefone');
-  if (tel) tel.addEventListener('input', function() {
-    let v = this.value.replace(/\D/g,'').substring(0,11);
+// Máscaras de input - usa delegação de evento para funcionar sempre
+document.addEventListener('input', function(e) {
+  // Máscara CPF
+  if (e.target && e.target.id === 'fCpf') {
+    let v = e.target.value.replace(/\D/g,'').substring(0,11);
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{3})/,'$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{3})/,'$1.$2');
+    e.target.value = v;
+  }
+  // Máscara Telefone
+  if (e.target && e.target.id === 'fTelefone') {
+    let v = e.target.value.replace(/\D/g,'').substring(0,11);
     if (v.length > 6) v = v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
     else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
     else if (v.length > 0) v = v.replace(/(\d{0,2})/,'($1');
-    this.value = v;
-  });
+    e.target.value = v;
+  }
 });
 
 function resize(file,cb){
