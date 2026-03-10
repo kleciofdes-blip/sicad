@@ -210,6 +210,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
 @media(max-width:360px){.d-flds{grid-template-columns:1fr}}
 .d-fld label{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px}
 .d-fld span{font-size:14px;color:var(--text);word-break:break-word}
+.d-section-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--accent);padding:14px 0 2px;font-weight:700;grid-column:1/-1;border-top:1px solid var(--border);margin-top:4px}
+.d-obs{grid-column:1/-1}
 .d-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .d-photo{width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);cursor:pointer}
 .d-actions{display:flex;gap:10px;margin-top:18px}
@@ -522,6 +524,31 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
             <button class="btn btn-primary btn-sm" onclick="camCapture('tat')">📸 CAPTURAR</button>
             <button class="btn btn-outline btn-sm" onclick="camClose('tat')">✕ CANCELAR</button>
           </div>
+        </div>
+
+        <!-- Veículos -->
+        <div class="fg" style="margin-top:4px">
+          <label>🚗 VEÍCULOS VINCULADOS</label>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);min-width:24px;text-align:center">1</span>
+              <input type="text" id="fVeiculo1" placeholder="Ex: Moto Honda CG 160 — Preta — ABC-1234" autocomplete="off" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);outline:none;font-family:'IBM Plex Sans',sans-serif">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);min-width:24px;text-align:center">2</span>
+              <input type="text" id="fVeiculo2" placeholder="Ex: Carro VW Gol — Branco — DEF-5678" autocomplete="off" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);outline:none;font-family:'IBM Plex Sans',sans-serif">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);min-width:24px;text-align:center">3</span>
+              <input type="text" id="fVeiculo3" placeholder="Ex: Bicicleta — Azul" autocomplete="off" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);outline:none;font-family:'IBM Plex Sans',sans-serif">
+            </div>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="fg" style="margin-top:4px">
+          <label>📝 OBSERVAÇÕES</label>
+          <textarea id="fObs" placeholder="Informações adicionais, histórico, comportamento, vínculos, etc..." rows="4" autocomplete="off" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;font-size:14px;color:var(--text);outline:none;font-family:'IBM Plex Sans',sans-serif;resize:vertical;min-height:100px;line-height:1.5;box-sizing:border-box"></textarea>
         </div>
 
         <div class="row-btns" style="margin-top:8px">
@@ -1044,6 +1071,8 @@ async function savePerson(){
       nome, mae:gv('fMae'), apelido:gv('fApelido'), nascimento:gv('fNasc'),
       cpf:gv('fCpf'), endereco:gv('fEnd'), quadra:gv('fQuadra'), bairro:gv('fBairro'),
       telefone:gv('fTelefone'), insta1:gv('fInsta1'), insta2:gv('fInsta2'), facebook:gv('fFacebook'),
+      veiculo1:gv('fVeiculo1'), veiculo2:gv('fVeiculo2'), veiculo3:gv('fVeiculo3'),
+      observacoes:document.getElementById('fObs').value.trim()||null,
       tipo_senha:_ts, senha_celular:_sc,
       foto:faceD||null, tatuagens:JSON.stringify(tatD),
       atualizado_em:now
@@ -1072,7 +1101,8 @@ async function savePerson(){
 function gv(id){return document.getElementById(id).value.trim()||null;}
 
 function cadClear(){
-  ['fNome','fMae','fApelido','fNasc','fCpf','fTelefone','fInsta1','fInsta2','fFacebook','fEnd','fQuadra','fBairro','fSenhaNum','fSenhaAlf'].forEach(id=>document.getElementById(id).value='');
+  ['fNome','fMae','fApelido','fNasc','fCpf','fTelefone','fInsta1','fInsta2','fFacebook','fEnd','fQuadra','fBairro','fSenhaNum','fSenhaAlf','fVeiculo1','fVeiculo2','fVeiculo3'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fObs').value='';
   clearPattern();setTipoSenha(null);
   faceD=null;tatD=[];
   document.getElementById('facePreviewWrap').style.display='none';
@@ -1114,6 +1144,16 @@ async function viewPerson(id){
         <div class="d-fld"><label>Instagram 2</label><span style="color:#fd1d1d">${p.insta2?'@ '+esc(p.insta2):'—'}</span></div>
         <div class="d-fld"><label>Facebook</label><span style="color:#1877f2">${esc(p.facebook||'—')}</span></div>
         <div class="d-fld"><label>Senha Celular</label><span style="font-family:'IBM Plex Mono',monospace;color:var(--accent);letter-spacing:3px">${p.tipo_senha?'['+p.tipo_senha.toUpperCase()+'] '+esc(p.senha_celular||'—'):'—'}</span></div>
+        ${(p.veiculo1||p.veiculo2||p.veiculo3)?`
+        <div class="d-section-title">🚗 VEÍCULOS</div>
+        ${p.veiculo1?`<div class="d-fld"><label>Veículo 1</label><span>${esc(p.veiculo1)}</span></div>`:''}
+        ${p.veiculo2?`<div class="d-fld"><label>Veículo 2</label><span>${esc(p.veiculo2)}</span></div>`:''}
+        ${p.veiculo3?`<div class="d-fld"><label>Veículo 3</label><span>${esc(p.veiculo3)}</span></div>`:''}
+        `:''}
+        ${p.observacoes?`
+        <div class="d-section-title">📝 OBSERVAÇÕES</div>
+        <div class="d-fld d-obs"><span style="white-space:pre-wrap;line-height:1.6">${esc(p.observacoes)}</span></div>
+        `:''}
         <div class="d-fld"><label>Cadastrado por</label><span>${esc(p.criado_por||'—')}</span></div>
         <div class="d-fld"><label>Data</label><span>${p.criado_em?new Date(p.criado_em).toLocaleDateString('pt-BR'):'—'}</span></div>
       </div>${tatH}
@@ -1139,6 +1179,10 @@ async function editPerson(){
   document.getElementById('fInsta1').value=p.insta1||'';
   document.getElementById('fInsta2').value=p.insta2||'';
   document.getElementById('fFacebook').value=p.facebook||'';
+  document.getElementById('fVeiculo1').value=p.veiculo1||'';
+  document.getElementById('fVeiculo2').value=p.veiculo2||'';
+  document.getElementById('fVeiculo3').value=p.veiculo3||'';
+  document.getElementById('fObs').value=p.observacoes||'';
   if(p.tipo_senha)setTipoSenha(p.tipo_senha);
   if(p.senha_celular){if(p.tipo_senha==='numeros')document.getElementById('fSenhaNum').value=p.senha_celular;else if(p.tipo_senha==='alfanumerico')document.getElementById('fSenhaAlf').value=p.senha_celular;else if(p.tipo_senha==='padrao'){window._pattern=p.senha_celular.split('');renderPattern();}}
   faceD=p.foto||null;tatD=parseTats(p.tatuagens);
