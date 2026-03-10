@@ -398,6 +398,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
         </div>
 
 
+        <!-- Alerta Faccionado -->
+        <div id="faccionadoBanner" onclick="toggleFaccionado()" style="cursor:pointer;border-radius:12px;border:2px solid var(--border);padding:14px 18px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;transition:all .3s;background:var(--surface2)" title="Clique para marcar como faccionado">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="faccionadoIcon" style="font-size:22px">⚠️</span>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text)" id="faccionadoLabel">FACCIONADO</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:1px" id="faccionadoSub">Clique para ativar o alerta</div>
+            </div>
+          </div>
+          <div id="faccionadoToggle" style="width:52px;height:28px;border-radius:14px;background:var(--surface3,#333);border:2px solid var(--border);transition:all .3s;position:relative;flex-shrink:0">
+            <div id="faccionadoThumb" style="width:20px;height:20px;border-radius:50%;background:#666;position:absolute;top:2px;left:2px;transition:all .3s"></div>
+          </div>
+        </div>
+        <!-- Facção nome (aparece só quando ativado) -->
+        <div id="faccionadoNomeWrap" style="display:none;margin-bottom:4px">
+          <input type="text" id="fFaccao" placeholder="Nome da facção / grupo / organização" autocomplete="off" style="width:100%;background:rgba(255,50,50,.08);border:2px solid rgba(255,80,80,.4);border-radius:10px;padding:12px 14px;font-size:14px;color:#ff6b6b;outline:none;font-family:'IBM Plex Sans',sans-serif;box-sizing:border-box">
+        </div>
+
         <div class="fgrid">
           <div class="fg"><label>Nome Completo *</label><input type="text" id="fNome" placeholder="Nome completo" autocomplete="off"></div>
           <div class="fg"><label>Apelido / Alcunha</label><input type="text" id="fApelido" placeholder="Apelido" autocomplete="off"></div>
@@ -1016,14 +1034,16 @@ async function loadDash(){
 }
 
 function pCard(p){
-  const av=p.foto?`<div class="pavatar"><img src="${p.foto}" loading="lazy"></div>`:`<div class="pavatar">👤</div>`;
-  return `<div class="pcard" onclick="viewPerson('${p.id}')">
+  const av=p.foto?`<div class="pavatar" style="${p.faccionado?'border:2px solid #ff4444;box-shadow:0 0 8px rgba(255,50,50,.5)':''}"><img src="${p.foto}" loading="lazy"></div>`:`<div class="pavatar" style="${p.faccionado?'border:2px solid #ff4444;box-shadow:0 0 8px rgba(255,50,50,.5)':''}">👤</div>`;
+  const faccBadge = p.faccionado?`<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(255,40,40,.2);border:1px solid rgba(255,60,60,.4);border-radius:6px;padding:1px 7px;font-size:10px;font-family:'IBM Plex Mono',monospace;color:#ff6b6b;font-weight:700;letter-spacing:1px">🚨 FACC${p.faccao?': '+esc(p.faccao.substring(0,15)):''}</span>`:'';
+  const cardStyle = p.faccionado?'border-left:3px solid #ff4444;background:linear-gradient(90deg,rgba(255,30,30,.06) 0%,var(--surface) 60%)':'';
+  return `<div class="pcard" onclick="viewPerson('${p.id}')" style="${cardStyle}">
     ${av}
     <div class="pinfo">
       <div class="pname">${esc(p.nome)}</div>
       <div class="pnick">${p.apelido?esc(p.apelido):'—'}</div>
       <div class="pmeta"><strong>MÃE:</strong> ${esc(p.mae||'—')}</div>
-      <div>${p.bairro?`<span class="tag tag-b">${esc(p.bairro)}</span>`:''} ${p.quadra?`<span class="tag tag-q">Q:${esc(p.quadra)}</span>`:''}</div>
+      <div>${faccBadge} ${p.bairro?`<span class="tag tag-b">${esc(p.bairro)}</span>`:''} ${p.quadra?`<span class="tag tag-q">Q:${esc(p.quadra)}</span>`:''}</div>
     </div>
     <div class="parrow">›</div>
   </div>`;
@@ -1072,6 +1092,7 @@ async function savePerson(){
       cpf:gv('fCpf'), endereco:gv('fEnd'), quadra:gv('fQuadra'), bairro:gv('fBairro'),
       telefone:gv('fTelefone'), insta1:gv('fInsta1'), insta2:gv('fInsta2'), facebook:gv('fFacebook'),
       veiculo1:gv('fVeiculo1'), veiculo2:gv('fVeiculo2'), veiculo3:gv('fVeiculo3'),
+      faccionado:_faccionado||false, faccao:_faccionado?(gv('fFaccao')||null):null,
       observacoes:document.getElementById('fObs').value.trim()||null,
       tipo_senha:_ts, senha_celular:_sc,
       foto:faceD||null, tatuagens:JSON.stringify(tatD),
@@ -1103,6 +1124,8 @@ function gv(id){return document.getElementById(id).value.trim()||null;}
 function cadClear(){
   ['fNome','fMae','fApelido','fNasc','fCpf','fTelefone','fInsta1','fInsta2','fFacebook','fEnd','fQuadra','fBairro','fSenhaNum','fSenhaAlf','fVeiculo1','fVeiculo2','fVeiculo3'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fObs').value='';
+  _faccionado=false;updateFaccionadoBanner();
+  document.getElementById('fFaccao').value='';
   clearPattern();setTipoSenha(null);
   faceD=null;tatD=[];
   document.getElementById('facePreviewWrap').style.display='none';
@@ -1183,6 +1206,8 @@ async function editPerson(){
   document.getElementById('fVeiculo2').value=p.veiculo2||'';
   document.getElementById('fVeiculo3').value=p.veiculo3||'';
   document.getElementById('fObs').value=p.observacoes||'';
+  _faccionado=!!(p.faccionado);updateFaccionadoBanner();
+  document.getElementById('fFaccao').value=p.faccao||'';
   if(p.tipo_senha)setTipoSenha(p.tipo_senha);
   if(p.senha_celular){if(p.tipo_senha==='numeros')document.getElementById('fSenhaNum').value=p.senha_celular;else if(p.tipo_senha==='alfanumerico')document.getElementById('fSenhaAlf').value=p.senha_celular;else if(p.tipo_senha==='padrao'){window._pattern=p.senha_celular.split('');renderPattern();}}
   faceD=p.foto||null;tatD=parseTats(p.tatuagens);
@@ -1263,7 +1288,45 @@ function lbClose(){document.getElementById('lb').classList.remove('on');}
 // ── UTILS ──
 // ── SENHA CELULAR ──
 let _pattern = [];
+let _faccionado = false;
 let _tipoSenha = null;
+
+function toggleFaccionado(){
+  _faccionado = !_faccionado;
+  updateFaccionadoBanner();
+}
+function updateFaccionadoBanner(){
+  const banner = document.getElementById('faccionadoBanner');
+  const lbl = document.getElementById('faccionadoSub');
+  const toggle = document.getElementById('faccionadoToggle');
+  const thumb = document.getElementById('faccionadoThumb');
+  const nomeWrap = document.getElementById('faccionadoNomeWrap');
+  const icon = document.getElementById('faccionadoIcon');
+  if(!banner) return;
+  if(_faccionado){
+    banner.style.background='rgba(255,30,30,0.12)';
+    banner.style.borderColor='rgba(255,60,60,0.6)';
+    lbl.textContent='⚠️ ALERTA ATIVO — este indivíduo é faccionado';
+    lbl.style.color='#ff6b6b';
+    toggle.style.background='rgba(255,60,60,0.4)';
+    toggle.style.borderColor='rgba(255,80,80,0.6)';
+    thumb.style.background='#ff4444';
+    thumb.style.left='28px';
+    icon.textContent='🚨';
+    nomeWrap.style.display='block';
+  } else {
+    banner.style.background='var(--surface2)';
+    banner.style.borderColor='var(--border)';
+    lbl.textContent='Clique para ativar o alerta';
+    lbl.style.color='var(--text-dim)';
+    toggle.style.background='var(--surface3,#333)';
+    toggle.style.borderColor='var(--border)';
+    thumb.style.background='#666';
+    thumb.style.left='2px';
+    icon.textContent='⚠️';
+    nomeWrap.style.display='none';
+  }
+}
 
 function setTipoSenha(tipo) {
   _tipoSenha = tipo;
