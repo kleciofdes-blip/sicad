@@ -322,6 +322,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
     <button class="tnav-btn active" onclick="go('dashboard')" data-p="dashboard">DASHBOARD</button>
     <button class="tnav-btn" onclick="if(editMode){if(!confirm('Sair do modo edição?')){return;}cadClear();}go('cadastrar')" data-p="cadastrar">+ CADASTRAR</button>
     <button class="tnav-btn" onclick="go('consultar')" data-p="consultar">CONSULTAR</button>
+    <button class="tnav-btn" onclick="go('foragidos')" data-p="foragidos">🚨 FORAGIDOS</button>
+    <button class="tnav-btn" onclick="go('mapa')" data-p="mapa">🗺️ MAPA</button>
+    <button class="tnav-btn" onclick="go('pesquisa')" data-p="pesquisa">📋 PESQUISA</button>
     <button class="tnav-btn" onclick="go('usuarios')" data-p="usuarios" id="tnUsuarios">USUÁRIOS</button>
   </div>
 
@@ -765,11 +768,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'IB
   </div><!-- /content -->
 
   <!-- Bottom nav (mobile) -->
-  <div class="bottom-nav">
-    <button class="bnav-btn active" onclick="go('dashboard')" data-p="dashboard"><span class="ni">📊</span>DASHBOARD</button>
-    <button class="bnav-btn" onclick="if(editMode){if(!confirm('Sair do modo edição?')){return;}cadClear();}go('cadastrar')" data-p="cadastrar"><span class="ni">➕</span>CADASTRAR</button>
-    <button class="bnav-btn" onclick="go('consultar')" data-p="consultar"><span class="ni">🔍</span>CONSULTAR</button>
-    <button class="bnav-btn" onclick="go('usuarios')" data-p="usuarios" id="bnUsuarios"><span class="ni">👥</span>USUÁRIOS</button>
+  <div class="bottom-nav" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+    <button class="bnav-btn active" onclick="go('dashboard')" data-p="dashboard" style="min-width:56px"><span class="ni">📊</span>DASH</button>
+    <button class="bnav-btn" onclick="if(editMode){if(!confirm('Sair do modo edição?')){return;}cadClear();}go('cadastrar')" data-p="cadastrar" style="min-width:62px"><span class="ni">➕</span>CADASTRAR</button>
+    <button class="bnav-btn" onclick="go('consultar')" data-p="consultar" style="min-width:62px"><span class="ni">🔍</span>CONSULTAR</button>
+    <button class="bnav-btn" onclick="go('foragidos')" data-p="foragidos" style="min-width:64px"><span class="ni">🚨</span>FORAGIDOS</button>
+    <button class="bnav-btn" onclick="go('mapa')" data-p="mapa" style="min-width:48px"><span class="ni">🗺️</span>MAPA</button>
+    <button class="bnav-btn" onclick="go('pesquisa')" data-p="pesquisa" style="min-width:56px"><span class="ni">📋</span>PESQUISA</button>
+    <button class="bnav-btn" onclick="go('usuarios')" data-p="usuarios" id="bnUsuarios" style="min-width:62px"><span class="ni">👥</span>USUÁRIOS</button>
   </div>
 </div><!-- /app -->
 
@@ -955,7 +961,7 @@ const DB = {
 };
 
 // ── LOGIN ──
-async function login(){
+async async function login(){
   const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
   if(!u||!p){errLg('Preencha usuário e senha.');return;}
   const btn=document.getElementById('loginBtn');btn.disabled=true;btn.innerHTML='<span class="ld"></span> ENTRANDO...';
@@ -1436,7 +1442,6 @@ function resize(file,cb){
 }
 function parseTats(v){if(!v)return[];if(Array.isArray(v))return v;try{return JSON.parse(v);}catch{return[];}}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function enc(s){return encodeURIComponent(s);}
 function fmtD(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
 let toastT;
 function toast(msg,type='info'){const t=document.getElementById('toast');t.innerHTML=`${{success:'✅',error:'❌',info:'ℹ️'}[type]||''} ${msg}`;t.className=`toast ${type} on`;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),3500);}
